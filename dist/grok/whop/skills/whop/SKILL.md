@@ -45,8 +45,9 @@ The table is a router, not a schema. Read the playbook before websites, ads, or
 formation — each has ordering traps that a tool description alone does not teach.
 
 Variants are a product's prices and billing options; older docs call them plans.
-Use `variants_*`. `checkout-configurations_create` takes a variant's id as
-`plan_id`, or an inline `plan`.
+Use `variants_*`. `checkout-configurations_create` takes a variant's id (`plan_id`
+or `variant_id`, whichever its schema lists) or an inline variant (`plan` or
+`variant`).
 
 `payments_list` has no failed or refunded `status` filter. To find failed or
 refunded payments, list the date range and read each payment's `substatus`
@@ -62,17 +63,22 @@ making it live.
 
 To ship code that only exists on this machine, do the local half yourself and the
 rest over MCP: write and build the files with your own tools, upload the artifact
-with `files_create` / `files_complete`, register it with `app-builds_create`, then
-`app-builds_promote`. Do not tell the user to install a CLI for this.
+(`files_create`, PUT the bytes to its `upload_url` with its `upload_headers`, then
+poll `files_get` until `upload_status` is `ready`), register it with
+`app-builds_create`, then `app-builds_promote`. Do not tell the user to install a
+CLI for this.
 
 ## Working agreement
 
 - **Action links are for the user, not for you.** When a response carries
-  `authorize_url`, `session_url`, `deposit_url`, or `checkout_url`, give the link to
-  the user and say what they need to finish there. Do not fetch or curl it to
-  "verify" — that does not complete the flow and can consume a single-use URL.
-  Re-run the matching `get`/`list` afterwards to confirm the outcome.
-- `hosted_url` is not an action link. For an app it is the live app URL — display it.
+  `authorize_url`, `session_url`, `deposit_url`, `checkout_url`, or `purchase_url`,
+  give the link to the user and say what they need to finish there. Do not fetch or
+  curl it to "verify" — that does not complete the flow and can consume a single-use
+  URL. Re-run the matching `get`/`list` afterwards to confirm the outcome.
+- `hosted_url` is not an action link. On an app it is deprecated and can be null:
+  the app's addresses are in its `domains`. A `ready` one is live. For any other
+  status, check `website.state` (or `platform.state`) on `domains_get` before
+  saying it is down.
 - **Never echo secrets.** API keys, access tokens, and founder identity data (SSN,
   date of birth, home address) are legitimate inputs to the flows that need them.
   Pass them straight through to the tool. Never repeat them back in your response,

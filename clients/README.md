@@ -17,11 +17,12 @@ this repo at a commit. They never run the build.
 | Manifest path | Claude reads `.claude-plugin/plugin.json`. Grok prefers `.grok-plugin/plugin.json`. |
 | `description` | It names the client, and lands in that client's catalog. |
 | Tokens | `{{CLIENT_NAME}}` and `{{CONNECT_COMMAND}}` in the `whop` skill; `{{MCP_URL}}` in the MCP config. Claude points at the directory endpoint `/claude/mcp`. |
-| MCP config | Claude renders `clients/claude/mcp.json` (`mcpTemplate` in `client.json`), which sends no headers: the directory scan flags static headers. Grok uses `shared/mcp.json`. |
+| MCP config | Claude renders `clients/claude/mcp.json` (`mcpTemplate` in `client.json`), which sends no headers, so the directory listing carries no static headers. Grok uses `shared/mcp.json`. |
 | Directory restrictions | Claude's directory listing leaves out AI media generation and money-out tools, and asks before anything spends money or goes live. The shared Markdown holds that text in `{{#if claude}} … {{else}} … {{/if}}` blocks, so other clients keep the full surface. |
 
-The `whop` skill, the three playbooks, and the MCP config come from one source for
-every client. The per-client blocks above are the only place they differ.
+The `whop` skill and the three playbooks come from one source for every client. The
+per-client blocks above are the only place they differ. The MCP config is shared too,
+except Claude's (`mcpTemplate`).
 
 ## Status
 

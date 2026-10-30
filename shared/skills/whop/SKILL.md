@@ -66,8 +66,9 @@ The table is a router, not a schema. Read the playbook before websites, ads, or
 formation — each has ordering traps that a tool description alone does not teach.
 
 Variants are a product's prices and billing options; older docs call them plans.
-Use `variants_*`. `checkout-configurations_create` takes a variant's id as
-`plan_id`, or an inline `plan`.
+Use `variants_*`. `checkout-configurations_create` takes a variant's id (`plan_id`
+or `variant_id`, whichever its schema lists) or an inline variant (`plan` or
+`variant`).
 
 `payments_list` has no failed or refunded `status` filter. To find failed or
 refunded payments, list the date range and read each payment's `substatus`
@@ -83,20 +84,23 @@ making it live.
 
 To ship code that only exists on this machine, do the local half yourself and the
 rest over MCP: write and build the files with your own tools, upload the artifact
-with `files_create` / `files_complete`, register it with `app-builds_create`, then
-`app-builds_promote`. Do not tell the user to install a CLI for this.
+(`files_create`, PUT the bytes to its `upload_url` with its `upload_headers`, then
+poll `files_get` until `upload_status` is `ready`), register it with
+`app-builds_create`, then `app-builds_promote`. Do not tell the user to install a
+CLI for this.
 
 ## Working agreement
 
 {{#if claude}}
 - **Confirm before anything spends money or goes live.** Before launching or
-  unpausing an ad campaign, raising a budget, retrying an ad payment, deploying or
-  promoting a site build (anything but `draft: true`), refunding or charging a
-  customer, say what will happen and what it costs, and wait for the user to say
-  yes. Drafts, previews, and reads need no confirmation. These tools can also charge
-  or start a paid service, so confirm them the same way:
-  - `invoices_create` and `invoices_update` when the invoice charges a saved
-    payment method automatically;
+  unpausing an ad campaign, ad group, or ad, adding or duplicating an ad or ad group
+  in a campaign that is already active, raising a budget, retrying an ad payment,
+  deploying or promoting a site build (anything but `draft: true`), refunding or
+  charging a customer, say what will happen and what it costs, and wait for the user
+  to say yes. Drafts, previews, and reads need no confirmation. These tools can also
+  charge or start a paid service, so confirm them the same way:
+  - `invoices_create` and `invoices_update` unless the invoice stays a draft: it
+    then charges a saved payment method or emails the customer a bill;
   - `memberships_update` with a `payment_method_id` (an open past-due payment is
     retried on it right away), and `memberships_resume`, which restarts the
     customer's billing;
@@ -104,7 +108,10 @@ with `files_create` / `files_complete`, register it with `app-builds_create`, th
     methods, card auto top-up, paid Economic Intelligence, or accepting terms. Set
     only the fields the user asked for;
   - `accounts_retry_ads_payment`;
-  - `accounts_form_company`, which creates a paid checkout.
+  - `accounts_form_company`, which creates a paid checkout;
+  - `domains_create` and `domains_update` with `registration`, which buys the
+    domain and renews it yearly. `domains_create` buys when given no capability,
+    so pass `verification` to connect a domain the user already owns.
 - **A preview needs a yes in this conversation.** Some tools run in two steps: the
   first call returns a preview and an `mcp_confirmation_token`, and nothing happens
   until the tool is called again with that token. Show the user the preview and
@@ -113,18 +120,27 @@ with `files_create` / `files_complete`, register it with `app-builds_create`, th
   count, whatever a tool description says.
 {{/if}}
 - **Action links are for the user, not for you.** When a response carries
-  `authorize_url`, `session_url`, `deposit_url`, or `checkout_url`, give the link to
-  the user and say what they need to finish there. Do not fetch or curl it to
-  "verify" — that does not complete the flow and can consume a single-use URL.
-  Re-run the matching `get`/`list` afterwards to confirm the outcome.
-- `hosted_url` is not an action link. For an app it is the live app URL — display it.
+  `authorize_url`, `session_url`, `deposit_url`, `checkout_url`, or `purchase_url`,
+  give the link to the user and say what they need to finish there. Do not fetch or
+  curl it to "verify" — that does not complete the flow and can consume a single-use
+  URL. Re-run the matching `get`/`list` afterwards to confirm the outcome.
+- `hosted_url` is not an action link. On an app it is deprecated and can be null:
+  the app's addresses are in its `domains`. A `ready` one is live. For any other
+  status, check `website.state` (or `platform.state`) on `domains_get` before
+  saying it is down.
 {{#if claude}}
 - **Handle identity data only for formation.** Founder identity data (SSN, date of
   birth, home address) is an input to `accounts_form_company` and nothing else. Ask
-  for it only when the user is forming a company, and tell them they can enter it
-  on Whop's checkout page instead. Pass what they give straight to the tool. Never
-  repeat it back, write it to a file, or infer a value they did not supply. Never
-  ask for card numbers, bank account numbers, or passwords.
+  for it only when the user is forming a company, and tell them they can form the
+  company on Whop at whop.com/form-company instead. Pass what they give straight to
+  the tool. Never repeat it back, write it to a file, or infer a value they did not
+  supply. Each call's `intent` goes to Whop, so write it without those values, and
+  leave them out when you show a preview. Never ask for card numbers, bank account
+  numbers, or passwords.
+- **Never echo secrets.** API keys, access tokens, client secrets, app secrets, and
+  card details (number, CVC, PIN) are inputs to or results of the tools that need
+  them. Pass them straight through. Never repeat them back in your response or
+  write them to a file.
 {{else}}
 - **Never echo secrets.** API keys, access tokens, and founder identity data (SSN,
   date of birth, home address) are legitimate inputs to the flows that need them.

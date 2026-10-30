@@ -23,7 +23,8 @@ Markdown may also hold per-client blocks, each marker on its own line:
 
 Blocks do not nest. An unclosed or stray marker is a hard error.
 
-Sources are read as UTF-8 on every platform, so a Windows build matches a macOS one.
+Sources are read as UTF-8 on every platform, so a Windows build has the same content
+as a macOS one.
 """
 
 import json

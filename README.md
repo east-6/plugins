@@ -46,6 +46,7 @@ shared/                          Client-neutral content
   skills/                          whop (+ references)
 clients/<client>/                Everything that differs per client
   client.json                      Manifest overrides, output paths, {{TOKEN}} values
+  mcp.json                         Optional MCP config template (mcpTemplate)
   skills/                          Client-specific skills (overrides shared by name)
 dist/<client>/whop/              AUTO-GENERATED
 .claude-plugin/marketplace.json   Claude marketplace, sources ./dist/claude/whop
