@@ -9,11 +9,15 @@ The official Whop plugin connects {{CLIENT_NAME}} to your Whop business through 
 ## Getting started
 
 {{#if claude}}
-1. Install the plugin with `/plugin install whop --marketplace whopio/plugins`, then restart {{CLIENT_NAME}}.
+1. Install the plugin. In the Claude app, add Whop from the plugin directory. In Claude Code, run `/plugin marketplace add whopio/plugins`, then `/plugin install whop@whop`, and restart Claude Code.
 {{else}}
 1. Install the plugin and restart {{CLIENT_NAME}}.
 {{/if}}
+{{#if claude}}
+2. Connect Whop: on the plugin's Connectors tab in the Claude app, or with {{CONNECT_COMMAND}} in Claude Code. Your browser opens so you can sign in to Whop and approve access.
+{{else}}
 2. Run {{CONNECT_COMMAND}}. The first Whop tool call opens your browser so you can sign in to Whop and approve access.
+{{/if}}
 3. Describe what you want, for example "create a $20/month membership and give me the checkout link" or "show me last week's revenue".
 
 ## What's included

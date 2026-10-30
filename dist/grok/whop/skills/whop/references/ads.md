@@ -10,11 +10,11 @@ Drafts can be created without billing. Launching (`status: "active"`) cannot.
 1. **Auth.** First-time ads billing needs a user login, not an API key — an API key
    can only reorder already-configured payment methods. A scope error saying the
    login predates the scope means the user must authorize again.
-2. **Facebook page.** `social-accounts_list` must show `"platform": "facebook"`.
-   - Connect an existing Meta Business: `social-accounts_connect` with
+2. **Facebook page.** `external-accounts_list` must show `"platform": "facebook"`.
+   - Connect an existing Meta Business: `external-accounts_connect` with
      `platform: "meta_business"`, `scopes: ["advertise"]`, and a `redirect_url`, then
      give the user the returned `authorize_url`.
-   - Or create a Whop-managed page: `social-accounts_create` with
+   - Or create a Whop-managed page: `external-accounts_create` with
      `platform: "facebook"`. That needs the account's `banner_image`, `logo`, and
      `description` set via `accounts_update` first. Account API keys cannot update
      their own account's branding — that needs a user login. `meta_business` is
@@ -25,7 +25,7 @@ Drafts can be created without billing. Launching (`status: "active"`) cannot.
    `deposit_url` — give it to the user. A successful deposit's `hosted_url` is the
    page, not an action link.
 
-TikTok uses `social-accounts_connect` with `platform: "tiktok"`. Same authorize-url
+TikTok uses `external-accounts_connect` with `platform: "tiktok"`. Same authorize-url
 rule.
 
 ## Launch

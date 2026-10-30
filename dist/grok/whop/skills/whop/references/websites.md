@@ -1,4 +1,4 @@
-# Websites and apps (`*.whop.app`)
+# Websites and apps (`*.whop.site`)
 
 Read this before creating or deploying an app. Field lists and enums live in each
 tool's own schema — do not invent them.
@@ -11,9 +11,9 @@ site:
 | Field | Notes |
 | --- | --- |
 | `name` | Required. Shown to users on the app store. |
-| `app_type` | `website` (visitors browse `<route>.whop.app`), `b2c_app` (creators install it), plus `b2b_app`, `company_app`, `component`. Ask; do not guess. |
+| `app_type` | `website` (visitors browse `<route>.whop.site`), `b2c_app` (creators install it), plus `b2b_app`, `company_app`, `component`. Ask; do not guess. |
 | `route` | The subdomain the hosted build is served from. A hosted app with no route cannot go live. |
-| `account_id` | `biz_` tag. Defaults to the account behind the credential. |
+| `account_id` | `biz_` tag. Required: pass the business id from `accounts_list`. Never rely on a default. |
 | `base_url` | Only for an app you host yourself elsewhere. |
 
 Ask which `app_type` before creating. The choice shapes how the app is surfaced, and

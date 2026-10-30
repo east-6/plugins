@@ -1,6 +1,6 @@
 ---
 name: whop
-description: "Run a business on Whop: websites on *.whop.app, products, checkout, payments, payouts, memberships, ads, LLC/C-corp formation, bounties, and stats. Use when the user mentions Whop, whop.com, their store, a membership or product, checkout links, payouts or transfers, Meta/TikTok ads, forming a company, or anything the Whop MCP tools provide."
+description: "Run a business on Whop: websites on *.whop.site, products, checkout, payments, payouts, memberships, ads, LLC/C-corp formation, bounties, and stats. Use when the user mentions Whop, whop.com, their store, a membership or product, checkout links, payouts or transfers, Meta/TikTok ads, forming a company, or anything the Whop MCP tools provide."
 ---
 
 # Whop
@@ -22,25 +22,35 @@ prefer, and no CLI to install.
 3. **Know the account.** `connection_status` returns `account_id`, and it is often
    **null** — a user grant is not bound to one business. When it is null, nothing is
    selected for you: get the id from `accounts_list` and pass `account_id` (`biz_…`)
-   explicitly on account-scoped calls. Never assume a default business.
+   explicitly on account-scoped calls. Never assume a default business. Pass it on
+   list calls too: `products_list` without `account_id` searches the public Whop
+   marketplace, not the user's store.
 
 ## What to run
 
 | Job | Start here | Playbook |
 | --- | --- | --- |
 | Check who I am / what I can do | `connection_status` | — |
-| Ship a website on `*.whop.app` | `apps_create`, then `apps_deploy` | [references/websites.md](references/websites.md) |
-| Sell something | `products_*`, `plans_*`, `checkout-configurations_*` | — |
+| Ship a website on `*.whop.site` | `apps_create`, then `apps_deploy` | [references/websites.md](references/websites.md) |
+| Sell something | `products_*`, `variants_*`, `checkout-configurations_*` | — |
 | Customers and access | `members_*`, `memberships_*` | — |
 | Take and manage money | `payments_*`, `payouts_*`, `transfers_*`, `deposits_*`, `cards_*`, `disputes_*` | — |
 | Run ads | `media_generate`, `ads_*`, `ad-campaigns_*`, `ad-groups_*` | [references/ads.md](references/ads.md) |
 | Form an LLC or C-corp | `accounts_form_company` | [references/formation.md](references/formation.md) |
 | Hire | `bounties_*`, `bounty-submissions_*` | — |
 | Measure | `stats_*`, `exports_*`, `events_*`, `people_*` | — |
-| Developer surface | `apps_*`, `app-builds_*`, `api-keys_*`, `webhooks_*` | — |
+| Developer surface | `apps_*`, `app-builds_*` | — |
 
 The table is a router, not a schema. Read the playbook before websites, ads, or
 formation — each has ordering traps that a tool description alone does not teach.
+
+Variants are a product's prices and billing options; older docs call them plans.
+Use `variants_*`. `checkout-configurations_create` takes a variant's id as
+`plan_id`, or an inline `plan`.
+
+`payments_list` has no failed or refunded `status` filter. To find failed or
+refunded payments, list the date range and read each payment's `substatus`
+(`failed`, `refunded`, `partially_refunded`, and so on).
 
 ## Working with app source
 
