@@ -1,11 +1,11 @@
 {
   "_about": [
-    "Planned tool surface of https://mcp.whop.com/chatgpt/mcp, used by scripts/check_openai_plugin.py --surface.",
-    "Planned /chatgpt/mcp tool list, not live (2026-10-29). The route does not exist on mcp.whop.com yet.",
-    "Replace with the real tools/list once the route ships: every tool name, grouped as <group>_<operation>.",
+    "Tool surface of https://mcp.whop.com/chatgpt/mcp, used by scripts/check_openai_plugin.py --surface.",
+    "Generated from the /chatgpt/mcp route's tools/list on its feature branch, 2026-11-05. The route is not live on mcp.whop.com yet.",
+    "Refresh from the live tools/list once the route ships: every tool name, grouped as <group>_<operation>. excludedGroups has to be re-derived by hand, because a live tools/list cannot produce it.",
     "tools: allowed operations per group. meta: tools that are not <group>_<operation>. excludedGroups: Whop tool groups with no tool on this surface."
   ],
-  "source": "planned /chatgpt/mcp tool list (not live), 2026-10-29",
+  "source": "tools/list of the /chatgpt/mcp route on its feature branch (not live), 2026-11-05",
   "meta": [
     "connection_status",
     "search",
@@ -16,7 +16,8 @@
   "tools": {
     "accounts": [
       "create",
-      "fees",
+      "customer_tracking",
+      "fees_get",
       "form_company",
       "get",
       "list",
@@ -36,24 +37,13 @@
       "unpause",
       "update"
     ],
-    "ad-conversion-value-rules": [
-      "create",
-      "delete",
-      "get",
-      "list",
-      "pause",
-      "unpause",
-      "update"
-    ],
     "ad-groups": [
       "create",
       "delete",
       "duplicate",
-      "estimate_reach",
       "get",
       "list",
       "pause",
-      "targeting_options",
       "unpause",
       "update"
     ],
@@ -87,6 +77,10 @@
       "get",
       "list",
       "promote"
+    ],
+    "app-installations": [
+      "get",
+      "list"
     ],
     "apps": [
       "create",
@@ -195,6 +189,10 @@
       "list",
       "update"
     ],
+    "docs": [
+      "query",
+      "search"
+    ],
     "domains": [
       "check",
       "create",
@@ -235,16 +233,11 @@
       "list"
     ],
     "external-accounts": [
-      "add-partner",
       "connect",
       "create",
       "delete",
-      "lead_forms",
       "list",
-      "partners",
-      "posts",
-      "refresh",
-      "remove-partner"
+      "refresh"
     ],
     "files": [
       "complete",
@@ -264,6 +257,7 @@
       "update"
     ],
     "invoices": [
+      "generate_pdf",
       "get",
       "list"
     ],
@@ -281,6 +275,12 @@
       "list",
       "report"
     ],
+    "livestreams": [
+      "get",
+      "list",
+      "pin",
+      "unpin"
+    ],
     "media": [
       "generate",
       "get"
@@ -290,7 +290,8 @@
       "list",
       "logs",
       "notes_create",
-      "notes_list"
+      "notes_list",
+      "update"
     ],
     "memberships": [
       "cancel",
@@ -333,13 +334,6 @@
       "referred_users",
       "retrieve"
     ],
-    "payment-method-domains": [
-      "create",
-      "delete",
-      "get",
-      "list",
-      "verify"
-    ],
     "payment-rules": [
       "activate",
       "create",
@@ -355,7 +349,8 @@
       "fees",
       "generate_pdf",
       "get",
-      "list"
+      "list",
+      "summary"
     ],
     "people": [
       "get",
@@ -411,17 +406,20 @@
       "get",
       "list"
     ],
+    "search": [
+      "list"
+    ],
     "shipments": [
       "create",
       "get",
       "list",
+      "lookup",
       "update"
     ],
     "stats": [
       "get",
       "list",
       "reports_list",
-      "reports_platform_trends",
       "time-series_get",
       "time-series_list"
     ],
@@ -467,6 +465,7 @@
   "excludedGroups": [
     "access-tokens",
     "account-links",
+    "ad-conversion-value-rules",
     "ad-pixels",
     "ai-chats",
     "api-keys",
@@ -478,6 +477,7 @@
     "fee-markups",
     "financing-applications",
     "identity-profiles",
+    "payment-method-domains",
     "payment-methods",
     "payment-quotes",
     "payout-accounts",

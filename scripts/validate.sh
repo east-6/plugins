@@ -86,7 +86,7 @@ if [ -d dist/openai/whop ]; then
     report="$(mktemp)"
     trap 'rm -f "$report"' EXIT
     if python3 scripts/check_openai_plugin.py dist/openai/whop \
-         --expect-origin https://mcp.whop.com --surface clients/openai/surface.json --draft >"$report"; then
+         --expect-origin https://mcp.whop.com --expect-url https://mcp.whop.com/chatgpt/mcp --surface clients/openai/surface.json --draft >"$report"; then
       echo "  ✓ $(tail -1 "$report")"
     else
       { grep '^ERROR' "$report" || true; } | sed 's/^/  /'

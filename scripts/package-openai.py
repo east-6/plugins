@@ -94,6 +94,7 @@ def main(argv):
     checker = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(checker)
     check_args = ["check", str(out), "--expect-origin", "https://mcp.whop.com",
+                  "--expect-url", "https://mcp.whop.com/chatgpt/mcp",
                   "--surface", str(ROOT / "clients" / "openai" / "surface.json")]
     if "--draft" in argv:
         check_args.append("--draft")

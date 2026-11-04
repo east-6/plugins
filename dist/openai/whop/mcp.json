@@ -3,7 +3,15 @@
   "mcpServers": {
     "whop": {
       "type": "streamable-http",
-      "url": "https://mcp.whop.com/chatgpt/mcp"
+      "url": "https://mcp.whop.com/chatgpt/mcp",
+      "extensions": {
+        "com.openai": {
+          "auth": {
+            "type": "oauth",
+            "client": { "mode": "dcr" }
+          }
+        }
+      }
     }
   }
 }

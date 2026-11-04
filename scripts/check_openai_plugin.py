@@ -2,7 +2,8 @@
 """Offline pre-flight check for a public ChatGPT/Codex plugin package (With MCP path).
 
     python3 scripts/check_openai_plugin.py <plugin.zip | plugin-dir>
-        [--expect-origin https://mcp.whop.com] [--surface clients/openai/surface.json]
+        [--expect-origin https://mcp.whop.com] [--expect-url https://mcp.whop.com/chatgpt/mcp]
+        [--surface clients/openai/surface.json]
         [--draft]
 
 Rule IDs (Z, M, L, I, R, P, C, S, Y, F, W) are this script's own labels; each
@@ -617,7 +618,7 @@ def check_publication(rep, p):
                 rep.err("P3", f"translations.{loc}.description must be <= 4000, no tabs")
 
 
-def check_mcp(pkg, rep, expect_origin):
+def check_mcp(pkg, rep, expect_origin, expect_url=None):
     mc = load_json(pkg, rep, "mcp.json", "C1")
     if mc is None:
         return None
@@ -645,6 +646,8 @@ def check_mcp(pkg, rep, expect_origin):
         origin = f"{u.scheme}://{u.netloc}"
         if expect_origin and origin != expect_origin:
             rep.err("C5", f"MCP origin {origin} != expected {expect_origin} (the origin can never change)")
+        if expect_url and url != expect_url:
+            rep.err("C5", f"MCP url {url} != expected {expect_url}: other routes serve tools this plugin says it leaves out")
         host = u.hostname or ""
         if host in ("localhost", "127.0.0.1", "::1") or any(t in host for t in ("ngrok", "trycloudflare", "loca.lt")):
             rep.err("C5", "local or tunnel endpoints are not allowed for public submission")
@@ -653,21 +656,22 @@ def check_mcp(pkg, rep, expect_origin):
         rep.err("C6", "drop 'headers': public submission rejects non-empty server headers (Whop rule: no key at all)")
     else:
         rep.ok("C6", "no server headers")
-    if "extensions" in s:
-        rep.warn("C7", "server-level 'extensions' (auth) is documented by OpenAI but violates the closed agent-plugins.org server schema; Whop omits it")
+    if "extensions" not in s:
+        rep.err("C7", "declare extensions.com.openai.auth with client.mode 'dcr': ChatGPT's default CIMD fails on Whop's server")
+    else:
+        rep.warn("C7", "server-level 'extensions' (auth) is documented by OpenAI but violates the closed agent-plugins.org server schema; only a real portal upload settles it")
         auth = ((s.get("extensions") or {}).get("com.openai") or {}).get("auth") if isinstance(s.get("extensions"), dict) else None
-        if isinstance(auth, dict):
-            if auth.get("type") not in ("oauth", "mixed"):
-                rep.err("C7", f"auth.type {auth.get('type')!r}: a protected server needs oauth or mixed")
+        if not isinstance(auth, dict):
+            rep.err("C7", "extensions.com.openai.auth is missing: declare type 'oauth' and client.mode 'dcr'")
+        else:
+            if auth.get("type") != "oauth":
+                rep.err("C7", f"auth.type {auth.get('type')!r}: Whop's server needs 'oauth'")
             cl = auth.get("client")
-            if isinstance(cl, dict):
-                mode = cl.get("mode")
-                if mode not in ("provided", "dcr", "cimd"):
-                    rep.err("C7", f"client.mode {mode!r} invalid")
-                if mode in ("dcr", "cimd") and {"clientId", "tokenEndpointAuthMethod"} & set(cl):
-                    rep.err("C7", "dcr/cimd client must not include clientId or credentials")
-                if mode == "provided" and not cl.get("clientId"):
-                    rep.err("C7", "provided client needs clientId")
+            mode = cl.get("mode") if isinstance(cl, dict) else None
+            if mode != "dcr":
+                rep.err("C7", f"client.mode {mode!r}: ChatGPT's default CIMD fails on Whop's server, so declare 'dcr'")
+            if isinstance(cl, dict) and {"clientId", "tokenEndpointAuthMethod"} & set(cl):
+                rep.err("C7", "a dcr client must not include clientId or credentials")
     for k, v, where in walk(mc):
         if k in ("clientSecret", "client_secret", "Authorization", "authorization", "token", "apiKey"):
             rep.err("C9", f"secret-like key in mcp.json: {where}")
@@ -898,9 +902,11 @@ def main(argv):
     if not args or args[0].startswith("-"):
         print(__doc__)
         return 2
-    path, expect_origin, surface, draft = args[0], None, None, "--draft" in args
+    path, expect_origin, expect_url, surface, draft = args[0], None, None, None, "--draft" in args
     if "--expect-origin" in args:
         expect_origin = args[args.index("--expect-origin") + 1]
+    if "--expect-url" in args:
+        expect_url = args[args.index("--expect-url") + 1]
     if "--surface" in args:
         surface = load_surface(args[args.index("--surface") + 1])
     rep = Report(draft)
@@ -908,7 +914,7 @@ def main(argv):
     if pkg.files:
         check_layout(pkg, rep)
         m = check_manifest(pkg, rep)
-        check_mcp(pkg, rep, expect_origin)
+        check_mcp(pkg, rep, expect_origin, expect_url)
         check_skills(pkg, rep, (m or {}).get("name", "plugin"))
         check_surface(pkg, rep, m, surface)
         check_todo(pkg, rep)

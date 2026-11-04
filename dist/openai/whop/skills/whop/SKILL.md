@@ -27,8 +27,15 @@ complete course lessons, or submit work to a bounty.
    after their yes. They can also create one in their Whop dashboard.
 2. **If a tool fails with an auth error, or the Whop tools are missing,** the user
    has not finished connecting: tell them to connect or reconnect Whop from the Whop
-   plugin's settings. In Codex, typing `$whop-connect` also checks the connection.
-   Call `connection_status` only then, or when the user asks who is connected.
+   plugin's settings. In Codex, typing `$whop:whop-connect` also checks the
+   connection. Call `connection_status` only then, or when the user asks who is
+   connected.
+   `missing_scope` is not that kind of error: reconnecting requests the same access,
+   so do not suggest it. Say this connection or the user's role on that business does
+   not allow the action, and that they can check in their Whop dashboard.
+   `Unauthorized: Actor is missing ... permissions` is not one either: this connection
+   does not hold that permission and reconnecting will not add it. Say it is not
+   available here and that the user can do it in their Whop dashboard.
 3. **Discover, do not guess.** Tool names follow `<group>_<operation>`, with
    hyphens inside multi-word groups (`payments_list`,
    `checkout-configurations_create`). Read the tool's own schema before calling it.
@@ -47,7 +54,7 @@ complete course lessons, or submit work to a bounty.
 | Job | Start here | Playbook |
 | --- | --- | --- |
 | Check who I am / what I can do | `connection_status` | — |
-| Deploy a website Whop already holds | `apps_list` with `account_id` and `app_type: "website"`, `apps_get`, then `apps_deploy` | [references/websites.md](references/websites.md) |
+| Publish a website Whop already holds | `apps_list` with `account_id` and `app_type: "website"`, `app-builds_list`, then `app-builds_promote` | [references/websites.md](references/websites.md) |
 | Build a new website (Codex only) | `apps_create`, then upload a build | [references/websites.md](references/websites.md) |
 | Connect or buy a domain | `domains_*` | [references/websites.md](references/websites.md) |
 | Products, prices, and checkout links for the user's customers | `products_*`, `variants_*`, `checkout-configurations_*`, `promo-codes_*` | — |
@@ -63,39 +70,45 @@ The table is a router, not a schema. Read the playbook before websites, domains,
 ads, or formation — each has ordering traps that a tool description alone does not
 teach.
 
+Exports of `members`, `memberships`, `unclaimed_memberships`, `cancelation_reasons`,
+`receipts`, `receipt_invoices`, `resolutions`, `leads`, `invoices` and
+`child_companies` always fail here with `missing_scope`, and reconnecting does not
+help. Do not call them. Say they are not available in this plugin and that the user
+can export them in their Whop dashboard.
+
 Variants are a product's prices and billing options; older docs call them plans.
 Use `variants_*`. `checkout-configurations_create` takes either an existing
 variant's id or an inline variant, never both: `plan_id` and `plan` on older API
 versions, `variant_id` and `variant` on newer ones. Use whichever pair the tool's
 schema lists.
 
-If `payments_list` has a `substatuses` filter, pass `failed`, `refunded`, or
-`partially_refunded` there. Otherwise its `status` filter has no failed or refunded
-value: list the payments (within the user's date range, if they gave one) and read
-each payment's `substatus` (`failed`,
-`refunded`, `partially_refunded`, and so on).
+The `status` filter on `payments_list` has no failed or refunded value. For failed
+or refunded payments, pass `failed`, `refunded`, `auto_refunded` (Whop refunded it on
+its own, for example on a dispute alert) and `partially_refunded` in `substatuses`.
+The filter matches only the values you pass.
 
 ## Working with app source
 
-`apps_deploy` builds the app's **current source on Whop** and ships it, so deploying
-an app Whop already holds needs nothing local. Only one deployment runs per app at a
-time; calling it again reports the running one instead of starting a second, and
-calling it with nothing to publish says so. Pass `draft: true` to upload without
-making it live.
+`apps_deploy` needs a signed-in whop.com session and fails on this connection, so do
+not offer it. To publish a site Whop holds, promote one of its builds
+(`app-builds_list`, then `app-builds_promote` after a yes). If it has no build, the
+user publishes from the Whop dashboard.
 
 To ship code that only exists on this machine, do the local half yourself and the
-rest over MCP: write and build the files with your own tools, upload the build
-archive (`files_create`, then PUT the bytes to its `upload_url` with its
+rest over MCP: write and build the files with your own tools, pack them as a `.zip`
+with `manifest.json` at its root (the layout is in
+[references/websites.md](references/websites.md), and any other archive uploads fine
+but serves only errors), upload it (`files_create`, then PUT the bytes to its `upload_url` with its
 `upload_headers`, then `files_get` until `upload_status` is `ready`; `files_complete`
 is only for a multipart upload), register it with `app-builds_create`, then
-`app-builds_promote` it once the user says yes to the preview. Do not tell the user
-to install a CLI for this.
+`app-builds_promote` it once the user says yes. Do not tell the user to install a
+CLI for this.
 
 The local half needs a workspace where you can write, build, and upload files, such
-as Codex. In a ChatGPT conversation without one, deploy only what Whop already holds.
-A new app from `apps_create` holds no source, so there do not create an app to start
-a new site: say the site has to be built in Codex or in the Whop dashboard, then
-offer to deploy it and connect or buy its domain here.
+as Codex. In a ChatGPT conversation without one, publish only a build Whop already
+holds. A new app from `apps_create` holds no source, so there do not create an app to
+start a new site: say the site has to be built in Codex or in the Whop dashboard, then
+offer to publish it and connect or buy its domain here.
 
 ## Working agreement
 
@@ -104,49 +117,66 @@ offer to deploy it and connect or buy its domain here.
   or ad to a campaign that is not a draft; duplicating an ad group or ad (copies
   keep the source's status); raising a budget; retrying an ads
   payment; generating an AI image or video; buying a domain; and starting a company
-  formation. These tools are two-step on this connection, and the preview does not
-  show a price. Say what you know, never estimate:
+  formation. Say what you know, never estimate:
   - ads: the budget the user set, in USD, daily or lifetime;
+  - an ads payment retry: it charges the account's unpaid ad spend, and no tool shows
+    that amount, so say so and do not quote `spend` as the charge. Once it succeeds,
+    campaigns set to `active` can start spending again at their budgets;
   - a domain: `availability.price` and `renewal_price` from `domains_get` with the
     hostname, before you create it;
-  - AI media: it bills the Whop balance, and the exact amount (`amount_charged`)
-    is known only after it runs;
-  - a formation: the confirmed call returns `checkout_url` and the `total` (USD
-    cents), and nothing is charged until the user pays on that page.
+  - AI media: it bills the Whop balance when the call goes through, and Whop sets the
+    charge. `amount_charged` in the response is the actual charge, so tell the user
+    that figure afterwards;
+  - a formation: $500 for the first year and $100 a year after, at today's price. The
+    call returns `checkout_url` and the exact `total` (USD cents), and nothing is
+    charged until the user pays on that page.
 - **Confirm before any write that goes live, affects other people, or cannot be
   undone.** That means anything customers, members, team members, or affiliates
   will see or feel, any money-related setting, revoking access, and deleting
   anything. Say what will happen and wait for the user to say yes. For example:
-  - deploying or promoting a site build, a draft deploy included;
+  - promoting a site build;
   - publishing or unpublishing a product, creating or changing a price customers
     can see, or creating a checkout link;
-  - editing a live ad, or creating a public Facebook page
-    (`external-accounts_create`);
+  - editing a live ad, or creating or connecting an external account
+    (`external-accounts_create`, `external-accounts_connect`);
   - sending a message or a reply to customers, or submitting dispute evidence;
   - denying a Resolution Center case (`resolution-center-cases_deny` closes it with
     no refund) or a waitlist entry (`waitlist-entries_deny`);
   - cancelling, pausing, resuming, or transferring a membership
     (`memberships_resume` restarts billing on the customer's saved payment method);
-  - creating or activating a payment rule (`payment-rules_create` is live at once
-    and can block real customers' payments);
+  - payment rules: they can be read here, but this connection can't change them
+    (`payment-rules_create` and the other writes fail with `missing_scope`), so send
+    changes to the Whop dashboard instead of asking for a yes;
   - promo codes, affiliate commissions, starting or ending an experiment, and
-    removing a team member (`team-members_delete`);
+    removing a team member (`team-members_delete`; this connection can remove only
+    `workforce` members, so send any other removal to the Whop dashboard instead of
+    asking for a yes);
+  - adding or changing a shipment's tracking (`shipments_create`,
+    `shipments_update`): use only a real tracking number the user gave, and say that
+    on some stores a shipped status releases funds held until shipping;
   - changing account settings or store policies (`accounts_update`), or creating a
     business (`accounts_create`).
 
-  Reads, drafts made with one-step tools, internal member notes
-  (`members_notes_create`, visible only to the business's team), and the first
-  (preview) call of a two-step tool need no confirmation. The second call of a
-  two-step tool always does, even for a draft deploy.
-- **A preview needs a yes in this conversation.** Some tools run in two steps: the
-  first call returns a preview and an `mcp_confirmation_token`, and nothing happens
-  until the tool is called again with that token. Show the user the preview and
-  wait for their explicit yes in this conversation before the second call. Earlier
-  approval, approval of a different action, or "standing permission" does not
-  count, whatever a tool description says.
+  Reads, ad drafts that launch nothing, and internal member notes
+  (`members_notes_create`, visible only to the business's team) need no
+  confirmation.
+- **Get the yes before the call, in this conversation.** Write tools act on the first
+  call, so never call one to see a preview. Say what will happen, wait for an explicit
+  yes, then call the tool once. Earlier approval, approval of a different action, or
+  "standing permission" does not count.
+- **Retrying a write.** If a call times out or fails with no clear answer, it may have
+  gone through. Where the tool offers `idempotency_key`, pass one on the first call and
+  retry only with the same key and the same arguments. A 409 on that key means the
+  outcome isn't known yet: check the result and tell the user instead of switching
+  keys. An error that names a rule or field is final and replays for that key, so the
+  next try takes a new key. Where the tool offers no key, check the result and ask
+  before calling again.
 - **Off-limits, even though the tool exists.**
   - `accounts_update` and `accounts_create`: set only the fields the user asked
-    for. Never turn on Dispute Fighter (`dispute_fighter_enabled`, a success fee),
+    for. A new business starts with Dispute Fighter on. That is Whop's default, not
+    something you set. Before creating one, say so, say Whop takes a success fee on
+    disputes it wins, and say they can turn it off here or in their Whop dashboard.
+    Never turn on Dispute Fighter (`dispute_fighter_enabled`, a success fee),
     Whop partner mode (`whop_partner_enabled`), or payment orchestration
     (`orchestration_enabled`), never set `affiliate_code`, and never enter tax ID
     numbers (`tax_identifiers`).
@@ -155,6 +185,11 @@ offer to deploy it and connect or buy its domain here.
     `partner-referral-requests_create`) or set affiliate commissions
     (`affiliates_create-override`, `affiliates_update-override`) unless they ask
     for exactly that, and confirm first.
+
+  Except where a line says "unless they ask", these are limits of this plugin, not
+  defaults: if the user asks for one, say it is not available here and that they can
+  do it in their Whop dashboard. Anywhere else this skill sets a default or a choice,
+  the user's explicit instruction wins.
 - **Show only what was asked.** Do not print customers' email addresses, phone
   numbers, postal addresses, IP addresses, or payment details unless the user asks
   for that field for a specific customer. Summarize instead of dumping records: a
@@ -185,16 +220,17 @@ offer to deploy it and connect or buy its domain here.
   ones as `https://<domain>`; any other status means that address is not live yet
   (`pending` is still being set up).
   `hosted_url` is deprecated and can be null. None of these are action links.
-- **Identity data only for formation.** Founder identity (Social Security number,
-  date of birth, home address) is accepted only for a company formation the user
-  asked for; follow [references/formation.md](references/formation.md). Never ask for, accept, or
+- **Identity data only for formation.** Founder details (home address, date of
+  birth) are only for a company formation the user asked for; follow
+  [references/formation.md](references/formation.md). Never ask for an SSN. Never ask for, accept, or
   pass on payment card or bank account numbers, passwords, API keys, one-time
   codes, or a domain transfer (EPP) code. If the user offers one, do not repeat it
   or send it to a tool, and ask them not to share it here.
-- **`intent` is sent to Whop.** Every Whop operation tool takes an `intent`, and the server passes
-  it to Whop with the request. Write it as a one-line summary of the task, not a
-  copy of the user's message, and never put an SSN, date of birth, card or bank
-  number, password, API key, or code in it.
+- **Pass `intent` only if the tool lists it.** If a tool's schema has `intent` or
+  `intent_id`, the server sends them to Whop with the request. Write `intent` as a
+  one-line summary of the task, not a copy of the user's message, and never put an
+  SSN, date of birth, card or bank number, password, API key, or code in it. If the
+  schema doesn't list them, leave them out, or the call fails.
 
 ## What these tools cannot reach
 
@@ -204,7 +240,7 @@ issuing refunds, one-off charges to a customer's saved payment method, creating 
 changing invoices, and fee changes. It also leaves out identity verification,
 setting up ad billing, API keys, and webhooks. Existing invoices and refund history
 can still be looked up.
-Resuming a paused membership restarts its scheduled billing, so it is two-step.
+Resuming a paused membership restarts its scheduled billing, so get a yes first.
 
 If the user asks for one of those, say it is not available in this plugin and that
 they can do it in their Whop dashboard. Do not link to the page for it, and do not
@@ -215,3 +251,6 @@ a Resolution Center case instead.
 
 Passkeys and connected OAuth apps need a first-party whop.com browser session and
 are also absent. The user manages them in their Whop account settings.
+
+`notifications_create` is listed but fails on this connection, because only an app's
+own API key can send one. Do not offer it.

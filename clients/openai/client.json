@@ -9,7 +9,7 @@
   "lineEndings": "lf",
   "tokens": {
     "CLIENT_NAME": "ChatGPT and Codex",
-    "CONNECT_COMMAND": "`$whop-connect` (in Codex)",
+    "CONNECT_COMMAND": "`$whop:whop-connect` (in Codex)",
     "MCP_URL": "https://mcp.whop.com/chatgpt/mcp"
   },
   "manifest": {
@@ -28,7 +28,7 @@
         "interface": {
           "displayName": "Whop",
           "shortDescription": "Run your Whop business",
-          "longDescription": "Official Whop integration (MCP Server + Skills). Sign in with your Whop account to launch websites you build in Codex or on Whop, and buy domains, create products and memberships with checkout links, accept payments and manage disputes, run Whop Ads from your own images or videos (in Codex) or AI-generated ones, form an LLC or C-corp, and read stats directly in ChatGPT and Codex. Connect your Whop account to get started, then describe what you want in plain language.\n\nThe plugin can only do what your Whop account can, and it asks before any change that goes live or costs money. It cannot send payouts or transfers, make one-off charges to your customers, or issue refunds. You can do those on Whop.",
+          "longDescription": "Official Whop integration (MCP Server + Skills). Sign in with your Whop account to launch websites you build in Codex or on Whop, and buy domains, create products and memberships with checkout links, accept payments and manage disputes, run Whop Ads from your own images or videos (in Codex) or AI-generated ones, form an LLC or C-corp, and read stats directly in ChatGPT and Codex. Connect your Whop account to get started, then describe what you want in plain language.\n\nThe plugin can only do what your Whop account can, and it asks before any change that goes live or costs money. It cannot send payouts or transfers, make one-off charges to your customers, or issue refunds. You can do those on Whop. For company formation, teams with no US address get a checkout link here, and a team with a US-address founder forms on Whop's own form.",
           "developerName": "Whop",
           "category": "Business & Operations",
           "websiteURL": "https://whop.com",
@@ -96,7 +96,7 @@
           },
           "demo_recording_url": "https://TODO.invalid/whop-chatgpt-demo",
           "commerce": true,
-          "commerce_description": "Manages Whop businesses the signed-in user runs. Checkout links it creates are for the business's own customers on Whop; the ChatGPT user is not their buyer. When the user asks, it can also start purchases of Whop's own business services, each only after the user approves it in the conversation: an LLC or C-corp formation and a custom domain (the user pays on Whop's hosted checkout page from the returned link; a domain renews yearly while auto-renew is on), AI-generated ad images and videos billed to the business's Whop balance, and Whop Ads spend billed to the ads payment method already on the account. It does not take payment details in ChatGPT, make one-off charges to the business's customers, issue refunds, or send payouts or transfers, and it is not built to shop the Whop marketplace or sell other sellers' products to the user."
+          "commerce_description": "Manages Whop businesses the signed-in user runs. Checkout links it creates are for the business's own customers on Whop; the ChatGPT user is not their buyer. When the user asks, it can also start purchases of Whop's own business services, each only after the user approves it in the conversation: an LLC or C-corp formation and a custom domain (the user pays on Whop's hosted checkout page from the returned link; a formation plan renews at a yearly fee, and a domain paid by card renews yearly on that card while auto-renew is on), AI-generated ad images and videos billed to the business's Whop balance, and Whop Ads spend billed to the ads payment method already on the account. It does not take payment details in ChatGPT, make one-off charges to the business's customers, issue refunds, or send payouts or transfers, and it is not built to shop the Whop marketplace or sell other sellers' products to the user."
         },
         "publication": {
           "release_notes": "Initial ChatGPT and Codex release: the Whop skills and the Whop MCP server for building and growing your own Whop business.",
