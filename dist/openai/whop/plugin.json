@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "whop",
-  "version": "1.0.0",
+  "version": "1.0.8",
   "author": {
     "name": "Whop",
     "url": "https://whop.com"
@@ -17,13 +17,13 @@
     "llc",
     "online store"
   ],
-  "description": "Whop's plugin for ChatGPT and Codex: skills plus the Whop MCP server. Sign in with your Whop account to build and grow the Whop businesses you run: websites (built in Codex or on Whop) and domains, products and checkout links for your customers, payments and disputes, Whop Ads with your own images or videos (in Codex) or AI-generated ones, LLC and C-corp formation, and stats. It cannot send payouts or transfers, make one-off charges to your customers, or issue refunds.",
+  "description": "Whop's plugin for ChatGPT and Codex: skills plus the Whop MCP server. Sign in with your Whop account to build and grow the Whop businesses you run: websites built on Whop and their domains, products and checkout links for your customers, payments and disputes, Whop Ads, a link to Whop's LLC and C-corp formation page, and stats. It cannot send payouts or transfers, make one-off charges to your customers, or issue refunds.",
   "extensions": {
     "com.openai": {
       "interface": {
         "displayName": "Whop",
         "shortDescription": "Run your Whop business",
-        "longDescription": "Official Whop integration (MCP Server + Skills). Sign in with your Whop account to launch websites you build in Codex or on Whop, and buy domains, create products and memberships with checkout links, accept payments and manage disputes, run Whop Ads from your own images or videos (in Codex) or AI-generated ones, form an LLC or C-corp, and read stats directly in ChatGPT and Codex. Connect your Whop account to get started, then describe what you want in plain language.\n\nThe plugin can only do what your Whop account can, and it asks before any change that goes live or costs money. It cannot send payouts or transfers, make one-off charges to your customers, or issue refunds. You can do those on Whop. For company formation, teams with no US address get a checkout link here, and a team with a US-address founder forms on Whop's own form.",
+        "longDescription": "Whop integration (MCP Server + Skills). Sign in with your Whop account to publish websites built on Whop and buy or connect domains, create products and memberships with checkout links, look up payments and manage disputes, manage Whop Ads campaigns, get the link to Whop's company formation page, and read stats directly in ChatGPT and Codex. Connect your Whop account to get started, then describe what you want in plain language.\n\nThe plugin works within the permissions of the Whop account you connect. It cannot send payouts or transfers, make one-off charges to your customers, or issue refunds. You can do those on Whop. For company formation, the plugin gives you the link to Whop's own form, where you enter your details. It never asks for them in the chat.",
         "developerName": "Whop",
         "category": "Business & Operations",
         "websiteURL": "https://whop.com",
@@ -46,37 +46,37 @@
             {
               "description": "List the newest members of the connected business (read only).",
               "prompt": "Who are my 5 newest Whop members?",
-              "tools_triggered": "accounts_list, members_list",
+              "tools_triggered": "list_accounts, list_members",
               "expected_behavior": "Identifies the reviewer test business, then lists its five most recently joined members, newest first, with name or username and join date. Shows no buyer email, phone, address or IP. Makes no changes."
             },
             {
               "description": "Find failed and refunded payments (read only).",
               "prompt": "Which of my Whop payments failed or were refunded? Show the amount, status and date.",
-              "tools_triggered": "accounts_list, payments_list",
+              "tools_triggered": "list_accounts, list_payments",
               "expected_behavior": "Finds the test business's failed payment and its refunded payment from each payment's substatus, and lists them with amount, currency, status and date. Shows no buyer email, phone, address or IP. Offers no refund, retry or new charge."
             },
             {
               "description": "Summarize memberships by status (read only).",
               "prompt": "How many active memberships does my Whop business have, and which ones are canceled?",
-              "tools_triggered": "accounts_list, memberships_list",
+              "tools_triggered": "list_accounts, list_memberships",
               "expected_behavior": "Reports the number of active memberships in the test business and lists its canceled memberships, using only Whop data. Makes no changes."
             },
             {
-              "description": "Report revenue for a time range from Whop stats (read only).",
+              "description": "Report revenue for a time range (read only).",
               "prompt": "How much revenue did my Whop business make in the last 30 days?",
-              "tools_triggered": "accounts_list, stats_time-series_list, stats_time-series_get",
-              "expected_behavior": "Reports the test business's revenue for the last 30 days from Whop stats, with the currency and the date range used. Does not invent numbers; if a metric is unavailable it says so."
+              "tools_triggered": "list_accounts, list_payments",
+              "expected_behavior": "Reports the test business's revenue for the last 30 days from its payments (or from Whop stats with list_time_series_metrics and get_metric_time_series), with the currency and the date range used, and accounts for the refunded payment. Does not invent numbers; if data is unavailable it says so. Makes no changes."
             },
             {
               "description": "Add an internal note to the newest member of the connected business. A safe write: the note is visible only to the business's team, moves no money, and messages no one.",
               "prompt": "Add a note to my newest Whop member that says: Sent the welcome pack.",
-              "tools_triggered": "accounts_list, members_list, members_notes_create",
+              "tools_triggered": "list_accounts, list_members, create_member_note",
               "expected_behavior": "Finds the test business's most recently joined member, adds the note 'Sent the welcome pack' to that member, and names the member by name or username without showing their email or other contact details. It changes nothing else and sends nothing to the member."
             }
           ],
           "negative": [
             {
-              "description": "Payouts are out of scope: no tool on this connection can withdraw or transfer a Whop balance. The model should make no money-moving call, say withdrawals are not available in this plugin and that the user can withdraw from their Whop dashboard, and give no link to a withdrawal page.",
+              "description": "Payouts are out of scope: no tool on this connection can withdraw or transfer a Whop balance. The model should make no money-moving call, say withdrawals are not available in this plugin, and point the user to their Whop dashboard to withdraw there.",
               "prompt": "Withdraw my Whop balance to my bank account."
             },
             {
@@ -84,14 +84,14 @@
               "prompt": "Charge my newest Whop member's saved card $50 for a one-time setup fee."
             },
             {
-              "description": "Refunds are out of scope. The model may look up the business's most recent sale, but must not issue, simulate or work around a refund: no accepting a dispute, no accepting or denying a Resolution Center case, and no opening one as the customer. It should say refunds are not available in this plugin and that the user can refund the payment from their Whop dashboard.",
-              "prompt": "Refund my most recent Whop payment in full."
+              "description": "Refunds are out of scope. The model may look up that payment, but must not issue, simulate or work around a refund: no accepting a dispute, no accepting or denying a Resolution Center case, and no opening one as the customer. It should say refunds are not available in this plugin and that the user can refund the payment from their Whop dashboard.",
+              "prompt": "Refund the latest payment on my monthly Whop product in full."
             }
           ]
         },
-        "demo_recording_url": "https://TODO.invalid/whop-chatgpt-demo",
+        "demo_recording_url": "https://storage.ghost.io/c/12/7b/127b828b-bdc2-4972-9cf2-de857df9c324/content/media/2026/11/whop-chatgpt-plugin-demo.mp4",
         "commerce": true,
-        "commerce_description": "Manages Whop businesses the signed-in user runs. Checkout links it creates are for the business's own customers on Whop; the ChatGPT user is not their buyer. When the user asks, it can also start purchases of Whop's own business services, each only after the user approves it in the conversation: an LLC or C-corp formation and a custom domain (the user pays on Whop's hosted checkout page from the returned link; a formation plan renews at a yearly fee, and a domain paid by card renews yearly on that card while auto-renew is on), AI-generated ad images and videos billed to the business's Whop balance, and Whop Ads spend billed to the ads payment method already on the account. It does not take payment details in ChatGPT, make one-off charges to the business's customers, issue refunds, or send payouts or transfers, and it is not built to shop the Whop marketplace or sell other sellers' products to the user."
+        "commerce_description": "Manages Whop businesses the signed-in user runs. Checkout links it creates are for the business's own customers on Whop; the ChatGPT user is not their buyer. When the user asks, it can also start purchases of Whop's own business services, each only after the user approves it in the conversation: a custom domain (the user pays on Whop's hosted checkout page from the returned link, and a domain paid by card renews yearly on that card while auto-renew is on) and Whop Ads spend billed to the ads payment method already on the account. For company formation it only returns the link to Whop's own form, where the user enters their details and pays. It does not take payment details in ChatGPT, make one-off charges to the business's customers, issue refunds, or send payouts or transfers, and it is not built to shop the Whop marketplace or sell other sellers' products to the user."
       },
       "publication": {
         "release_notes": "Initial ChatGPT and Codex release: the Whop skills and the Whop MCP server for building and growing your own Whop business.",

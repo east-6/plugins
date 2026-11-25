@@ -16,7 +16,10 @@ server-side checks are out of reach here.
             `excludedGroups` (every Whop tool group with no tool on the route;
             required, because a live tools/list cannot produce it). Every
             tools_triggered name, and every Whop tool name the skills mention, must
-            be on it (R5 / SURF).
+            be on it (R5 / SURF). Since the route moved to verb-first names it can
+            instead hold `names` (every tool on the route), `retiredGroups` (the old
+            group prefixes, so an old name still fails) and `notTools` (backticked
+            fields that start like a tool name).
 --draft     Submission-only gates become warnings: the placeholder demo URL (R7) and
             TODO markers (TODO). Without it they are errors.
 
@@ -67,6 +70,7 @@ CLAUDE_ONLY = ("commands/", "agents/", ".claude/", "output-styles/")
 JUNK = re.compile(r"(^|/)(\.DS_Store|Thumbs\.db|desktop\.ini|__MACOSX/.*|\.git/.*|\.env.*)$")
 TEXT_EXT = (".md", ".json", ".yaml", ".yml", ".txt", ".svg")
 TOOLISH = re.compile(r"(?<![\w./-])([a-z][a-z0-9-]*)_([a-z0-9][a-z0-9_-]*\*?|\*)(?![\w-])")
+BACKTICKED = re.compile(r"`([a-z][a-z0-9_]*\*?)`")
 
 
 class Report:
@@ -831,6 +835,20 @@ def check_openai_yaml(pkg, rep, d, files):
 def load_surface(path):
     with open(path, encoding="utf-8") as f:
         s = json.load(f)
+    if "names" in s:
+        # Verb-first names (list_products), as the route serves them since Nov 2026.
+        if not s["names"] or not s.get("retiredGroups"):
+            raise SystemExit(f"error: {path} needs non-empty names and retiredGroups lists (see --surface)")
+        allowed = set(s["names"])
+        return {
+            "flat": True,
+            "meta": set(),
+            "allowed": allowed,
+            "verbs": {n.split("_", 1)[0] for n in allowed if "_" in n},
+            "not_tools": set(s.get("notTools", [])),
+            "groups": set(),
+            "known_groups": set(s["retiredGroups"]),
+        }
     if not s.get("excludedGroups"):
         raise SystemExit(f"error: {path} needs a non-empty excludedGroups list (see --surface)")
     allowed = {f"{g}_{op}" for g, ops in s["tools"].items() for op in ops}
@@ -867,7 +885,23 @@ def check_surface(pkg, rep, manifest, surf):
     for path, raw in pkg.files.items():
         if not path.startswith("skills/") or not path.endswith((".md", ".yaml", ".yml")):
             continue
-        for g, op in TOOLISH.findall(raw.decode("utf-8", "replace")):
+        text = raw.decode("utf-8", "replace")
+        if surf.get("flat"):
+            # An old <group>_<operation> name, or a backticked word that starts with one
+            # of the route's verbs, has to be a tool the route serves.
+            for g, op in TOOLISH.findall(text):
+                if g in surf["known_groups"] and f"{g}_{op}" not in surf["allowed"]:
+                    bad.setdefault(path, set()).add(f"{g}_{op}")
+            for tok in BACKTICKED.findall(text):
+                if "_" not in tok or tok in surf["allowed"] or tok in surf["not_tools"]:
+                    continue
+                if tok.split("_", 1)[0] not in surf["verbs"]:
+                    continue
+                if tok.endswith("*") and any(n.startswith(tok[:-1]) for n in surf["allowed"]):
+                    continue
+                bad.setdefault(path, set()).add(tok)
+            continue
+        for g, op in TOOLISH.findall(text):
             if g not in surf["known_groups"]:
                 continue
             if not surface_ok(g, op, surf):

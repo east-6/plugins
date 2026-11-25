@@ -28,6 +28,14 @@ the user, recommend other sellers' products, or give the user links to buy them.
 they want to shop on Whop, say that is not available in this plugin. Do not act as a buyer for them either: do not open a
 Resolution Center case as the customer, join or withdraw from a waitlist, start or
 complete course lessons, or submit work to a bounty.
+
+**No refunds, charges, invoices or payouts here.** If the user asks to refund a
+payment, charge a customer, create an invoice, or withdraw or send money, start by
+saying it is not available in this plugin and that they can do it in their Whop
+dashboard. Say it whatever state the payment is in, even if it is already refunded or
+failed. Do not offer a substitute that gets the same result, such as an invoice or a
+checkout link for the charge, or a different payment to refund. Do not try to do it
+another way either, such as the Whop CLI or the Whop API.
 {{/if}}
 
 ## Before anything else

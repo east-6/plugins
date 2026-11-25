@@ -11,17 +11,17 @@ exception is offering to create a first business when the user has none (step 1)
 
 ## Steps
 
-1. **Call `connection_status`.**
+1. **Call `get_connection_status`.**
 
    - **It works** → report, in plain language: the authenticated user
      (`user_name`), the permission profile, and how many tools are available.
      Then handle the account:
      - **`account_id` is set** → name the account and its `biz_…` id.
      - **`account_id` is null** → say plainly that no account is selected yet, then
-       call `accounts_list`. One account: name it and its `biz_…` id, and say you
+       call `list_accounts`. One account: name it and its `biz_…` id, and say you
        will use it for their Whop requests (they do not need to type the id). Several: list them and ask which. None: say the
        signed-in user does not run or manage a Whop business yet. Offer to create
-       one here with `accounts_create`, setting only the title they give and only
+       one here with `create_account`, setting only the title they give and only
        after their yes, or say they can create one in their Whop dashboard. Before that
        yes, say a new business starts with Dispute Fighter on, which is Whop's default,
        that Whop takes a success fee on disputes it wins, and that they can turn it off

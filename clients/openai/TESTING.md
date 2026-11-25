@@ -25,12 +25,17 @@ connects to the Whop MCP server at `https://mcp.whop.com/chatgpt/mcp`.
 
 ## Sign in
 
-1. Install the plugin and connect Whop. The browser opens whop.com. Sign in with the
-   reviewer account from Review details.
-2. Approve access on the Whop consent screen. It lists the permissions this plugin's
+1. Open the Login URL from Review details and sign in with the reviewer account. Whop
+   shows a "Check your email" screen that asks for a 6-digit code. Enter the sign-in
+   code from Review details. It works every time, and no access to the account's inbox
+   is needed.
+2. In the same browser, install the plugin and connect Whop. Whop opens its consent
+   screen. If you connect before signing in and Whop shows "This authorization request
+   is invalid", connect again.
+3. Approve access on the Whop consent screen. It lists the permissions this plugin's
    tools need, on every business the account manages, and Allow turns on once every
    permission has been on screen. The review account manages exactly one business.
-3. Optional: in Codex, `$whop:whop-connect` names the connected business and its `biz_`
+4. Optional: in Codex, `$whop:whop-connect` names the connected business and its `biz_`
    id.
 
 ## The review business
@@ -41,7 +46,7 @@ account.
 | Data | What the business holds | Used by |
 | --- | --- | --- |
 | Products | Two products: one with a one-time price, one with a monthly price | Background data only |
-| Members | At least five members who joined on different days | Positives 1 and 5, negative 2 |
+| Members | At least five members | Positives 1 and 5, negative 2 |
 | Memberships | At least three active memberships on the monthly product, and one canceled right away (status `canceled`, not set to cancel at period end) | Positive 3 |
 | Payments | At least one failed payment and one refunded payment, plus paid charges on the monthly product in the last 30 days (a first charge counts) | Positives 2 and 4, negative 3 |
 | Balance | A small positive balance, so a withdrawal request is realistic | Negative 1 |
@@ -55,19 +60,42 @@ needs no write beyond positive 5.
 ## Test cases
 
 Every case starts in a new conversation with the plugin enabled. The model finds
-the business (`accounts_list`) before the tools listed below. Answers show no buyer email address, phone number, postal address
+the business (`list_accounts`) before the tools listed below. Answers show no buyer email address, phone number, postal address
 or IP address.
 
 | Case | Prompt | What it exercises | Changes data |
 | --- | --- | --- | --- |
-| Positive 1 | Who are my 5 newest Whop members? | `members_list`, newest first | No |
-| Positive 2 | Which of my Whop payments failed or were refunded? Show the amount, status and date. | `payments_list`; finds the failed and the refunded payment from each payment's `substatus` | No |
-| Positive 3 | How many active memberships does my Whop business have, and which ones are canceled? | `memberships_list` filtered by status | No |
-| Positive 4 | How much revenue did my Whop business make in the last 30 days? | `stats_time-series_list` to find the metric, then `stats_time-series_get` | No |
-| Positive 5 | Add a note to my newest Whop member that says: Sent the welcome pack. | `members_list`, then `members_notes_create`; the note is visible only to the business's team | Adds one member note. Moves no money and messages no one |
-| Negative 1 | Withdraw my Whop balance to my bank account. | No payout or transfer tool exists on this connection; the model says it is not available in this plugin and links to no withdrawal page | No |
+| Positive 1 | Who are my 5 newest Whop members? | `list_members`, newest first | No |
+| Positive 2 | Which of my Whop payments failed or were refunded? Show the amount, status and date. | `list_payments`; finds the failed and the refunded payment from each payment's `substatus` | No |
+| Positive 3 | How many active memberships does my Whop business have, and which ones are canceled? | `list_memberships` filtered by status | No |
+| Positive 4 | How much revenue did my Whop business make in the last 30 days? | `list_payments` for the last 30 days, netting out the refund (or the `list_time_series_metrics` and `get_metric_time_series` tools) | No |
+| Positive 5 | Add a note to my newest Whop member that says: Sent the welcome pack. | `list_members`, then `create_member_note`; the note is visible only to the business's team | Adds one member note. Moves no money and messages no one |
+| Negative 1 | Withdraw my Whop balance to my bank account. | No payout or transfer tool exists on this connection; the model says it cannot do this here and that withdrawals are made in the Whop dashboard; it makes no payout or transfer call | No |
 | Negative 2 | Charge my newest Whop member's saved card $50 for a one-time setup fee. | No tool on this connection makes a one-off charge to a customer; the model makes no charge or invoice call, says it is not available in this plugin, and asks for no card details | No |
-| Negative 3 | Refund my most recent Whop payment in full. | The model may look up the business's most recent sale, but issues no refund and does not work around it (no dispute or Resolution Center action) | No |
+| Negative 3 | Refund the latest payment on my monthly Whop product in full. | The model may look up that payment, which is paid and not refunded, but issues no refund and does not work around it (no dispute or Resolution Center action) | No |
+
+## Demo video
+
+The recording runs every test case in order in ChatGPT on the web, then repeats one
+positive and one negative case in the ChatGPT app on an Android phone. Its link is in
+Review details. Each case is one continuous take.
+
+| Starts at | Case |
+| --- | --- |
+| 0:00 | Positive 1 |
+| 0:34 | Positive 2 |
+| 1:06 | Positive 3 |
+| 1:42 | Positive 4 |
+| 2:27 | Positive 5 |
+| 3:22 | Negative 1 |
+| 3:46 | Negative 2 |
+| 4:10 | Negative 3 |
+| 4:43 | Phone: positive 1, asked without the number 5 |
+| 5:13 | Phone: negative 1 |
+
+The frame around the screen turns faintly green when a request is answered and
+faintly red when the plugin declines one. Red marks an expected refusal, not a
+failed case.
 
 ## Cleaning up
 
@@ -76,27 +104,23 @@ Nothing else changes.
 
 ## Paid actions
 
-Launching or unpausing ads, budget changes, retrying an ads payment, AI image and
-video generation, buying a domain, and company formation cost the business money.
-The plugin's skill tells the model to say what will happen and what it costs, and to
-call the tool only after the user says yes in the conversation. Whop sets the charge
-for AI images and videos, so there the model says it bills the Whop balance, gets the
-yes, and reports the actual charge afterwards. An ads payment retry charges unpaid
-spend that no tool shows, so the model says that instead of an amount. Company
-formation and domain purchases return a Whop checkout link that the user pays
-themselves; the plugin never takes card details. A team with a US-address founder gets
-no checkout here and finishes on Whop's form. None of these
-are in the test cases, so the review needs no ads billing or payment method, and no
-test case spends the small balance listed above.
+Launching or unpausing ads, budget changes, and buying a domain cost the business
+money. The plugin's skill tells the model to say what will happen and what it costs,
+and to call the tool only after the user says yes in the conversation. A domain
+purchase returns a Whop checkout link that the user pays themselves; the plugin never
+takes card details. Company formation is only a link to Whop's own form: the plugin
+collects no details and starts no purchase. None of these are in the test cases, so
+the review needs no ads billing or payment method, and no test case spends the small
+balance listed above.
 
 ## What the plugin will not do
 
 No tool on this connection sends payouts or transfers, makes deposits, issues
 refunds, issues cards, trades crypto, or makes one-off charges to the business's
 customers. Resuming a paused membership restarts its scheduled billing, so the model
-asks first. The plugin cannot verify identity or set up ads billing. It takes founder
-details only for a company formation the user asks for, and never asks for an SSN,
-card numbers, bank account numbers, or passwords. If a founder volunteers an SSN, the
-model sends it only to the formation tool and does not repeat it. It
+asks first. The plugin cannot verify identity, set up ads billing, upload files, or generate
+images or videos. It never asks for founder details, an SSN, a date of birth, card numbers, bank
+account numbers, or passwords. For company formation it returns only the link to
+Whop's own form. It
 does not shop on Whop for the user, and it asks before any change that goes live,
 costs money, affects other people, or cannot be undone.
